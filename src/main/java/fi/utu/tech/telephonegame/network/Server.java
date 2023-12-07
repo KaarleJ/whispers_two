@@ -10,6 +10,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /*
  * This class represents a server that listens for incoming connections.
  * When a new peer connects, a new PeerHandler instance is created for it.
+ * uusi peerhandler=clienthandler olio server kun alkaa kuuntelemaan uutta asiakasta while loopilla
+ * 
  */
 public class Server extends Thread {
   private ServerSocket serverSocket;
@@ -28,6 +30,15 @@ public class Server extends Thread {
 
   @Override
   public void run() {
-    //
+    try {
+      while(true){
+        Socket s = serverSocket.accept();
+        PeerHandler ph = new PeerHandler(s, messagesIn);
+        peers.add(ph);
+        ph.start();
+      }
+    } catch(IOException e){
+      e.printStackTrace();
+    }
   }
 }
