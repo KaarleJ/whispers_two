@@ -29,10 +29,20 @@ public class Refiner {
 	/*
 		If you decide to use the lists above, comment out the following three lines.
 	 */
-	private static final String[] subjects = Words.subjects;
-	private static final String[] predicates = Words.predicates;
-	private static final String[] objects = Words.subjects;
+	private static final String[] subjects =  (
+			"teekkari, humanisti, digit, kissa, vesi, haalarit, assari, vegas, kiltahuone")
+			.split(",");
 
+	private static final String[] predicates = Words.predicates;
+
+	private static final String[] objects = (
+			"agora, glögi, harjoitustyö, koodari, teekkarikomissio, sitsit, haalarimerkki, naapuri, paskajoonas")
+			.split(",");
+	private static final String[] emoji = (
+		"😀, 😃, 😄, 😁, 😆, 😅, 😂, 🤣, 😊, 😇, 🙂, 🙃, 😉, 😌, 😍, 🥰, 😘, 😗, 😙, 😚, 😋, 😛, 😝, 😜, 🤪, 🤨, 🧐, 🤓, 😎, 🤩, 🥳, 😏, 😒, 😞, 😔, 😟, 😕, 🙁, ☹️, 😣, 😖, 😫, 😩, 🥺, 😢, 😭, 😤, 😠, 😡, 🤬, 🤯, 😳, 🥵, 🥶, 😱, 😨, 😰, 😥, 😓, 🤗, 🤔, 🤭, 🤫, 🤥, 😶, 😐, 😑, 😬, 🙄, 😯, 😦, 😧, 😮, 😲, 🥱, 😴, 🤤, 😪, 😵, 🤐, 🥴, 🤢, 🤮, 🤧, 😷, 🤒, 🤕, 🤑, 🤠, 😈, 👿, 👹, 👺, 🤡, 💩, 👻, 💀, ☠️, 👽, 👾, 🤖, 🎃, 😺, 😸, 😹, 😻, 😼")
+		.split(",");
+	
+	
 	private static final Random rnd = new Random();
 
 
@@ -54,7 +64,8 @@ public class Refiner {
 				conjunctions[rnd.nextInt(conjunctions.length)] + " " +
 				subjects[rnd.nextInt(subjects.length)] + " " +
 				predicates[rnd.nextInt(predicates.length)]+ " " +
-				objects[rnd.nextInt(objects.length)];
+				objects[rnd.nextInt(objects.length)]+ " " +
+				emoji[rnd.nextInt(emoji.length)];
 
 		return outText;
 	}
