@@ -10,8 +10,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /*
  * This class represents a server that listens for incoming connections.
  * When a new peer connects, a new PeerHandler instance is created for it.
- * uusi peerhandler=clienthandler olio server kun alkaa kuuntelemaan uutta asiakasta while loopilla
- * 
  */
 public class Server extends Thread {
   private ServerSocket serverSocket;
@@ -20,7 +18,7 @@ public class Server extends Thread {
   private CopyOnWriteArrayList<PeerHandler> peers;
 
   public Server(int port, ServerSocket serverSocket, ConcurrentLinkedQueue<Serializable> messagesIn,
-    CopyOnWriteArrayList<PeerHandler> peers) {
+      CopyOnWriteArrayList<PeerHandler> peers) {
     this.setName("Server Thread");
     this.serverSocket = serverSocket;
     this.port = port;
@@ -31,13 +29,19 @@ public class Server extends Thread {
   @Override
   public void run() {
     try {
-      while(true){
-        Socket s = serverSocket.accept();
-        PeerHandler ph = new PeerHandler(s, messagesIn);
-        peers.add(ph);
-        ph.start();
+      // Here we create a server socket and start listening for incoming connections
+      serverSocket = new ServerSocket(port);
+      while (true) {
+        // When a new peer connects, we create a new socket and start a new PeerHandler
+        // instance for it
+        System.out.println("Waiting for peer to connect");
+        Socket socket = serverSocket.accept();
+        System.out.println("Peer connected:" + socket.getInetAddress() + ":" + socket.getPort());
+        PeerHandler peerHandler = new PeerHandler(socket, messagesIn);
+        peers.add(peerHandler);
+        peerHandler.start();
       }
-    } catch(IOException e){
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }

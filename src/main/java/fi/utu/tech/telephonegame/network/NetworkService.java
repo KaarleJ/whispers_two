@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class NetworkService extends Thread implements Network {
 	private ServerSocket serverSocket;
+	private Server server;
 
 	// These are the queues for storing messages to be sent and received
 	private ConcurrentLinkedQueue<Serializable> messagesIn = new ConcurrentLinkedQueue<Serializable>();
@@ -49,23 +50,13 @@ public class NetworkService extends Thread implements Network {
 	 * 
 	 */
 	public void startListening(int serverPort) {
-		System.out.printf("I should start listening for new peers at TCP port %d%n", serverPort);
-		try {
-			// Here we create a server socket and start listening for incoming connections
-			serverSocket = new ServerSocket(serverPort);
-			while (true) {
-				// When a new peer connects, we create a new socket and start a new PeerHandler
-				// instance for it
-				System.out.println("Waiting for peer to connect");
-				Socket socket = serverSocket.accept();
-				System.out.println("Peer connected:" + socket.getInetAddress() + ":" + socket.getPort());
-				PeerHandler peerHandler = new PeerHandler(socket, messagesIn);
-				peers.add(peerHandler);
-				peerHandler.start();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (server != null && server.isAlive()) {
+			System.out.println("Server is already running");
+			return;
 		}
+		System.out.printf("I should start listening for new peers at TCP port %d%n", serverPort);
+		server = new Server(serverPort, serverSocket, messagesIn, peers);
+		server.start();
 	}
 
 	/**
@@ -139,8 +130,10 @@ public class NetworkService extends Thread implements Network {
 	/**
 	 * Waits for messages from the core application and forwards them to the network
 	 * 
-	 * Ie. When MessageBroker calls postMessage, the message-to-be-sent should be spooled
-	 * into some kind of a producer-consumer-friendly data structure and picked up here for
+	 * Ie. When MessageBroker calls postMessage, the message-to-be-sent should be
+	 * spooled
+	 * into some kind of a producer-consumer-friendly data structure and picked up
+	 * here for
 	 * the actual delivery over sockets.
 	 * 
 	 * Thread running this method is started in the constructor of NetworkService.
@@ -148,14 +141,9 @@ public class NetworkService extends Thread implements Network {
 	 */
 	public void run() {
 		while (true) {
-			try {
-				Thread.sleep(1000);
-				sendToNeighbours(messagesOut.poll());
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			sendToNeighbours(messagesOut.poll());
 		}
-		
+
 	}
 
 }

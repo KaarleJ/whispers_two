@@ -66,19 +66,25 @@ public class MessageBroker extends Thread {
 
 	private Message process(Object procMessage) {
 		Message msg = procMessage instanceof Message ? (Message) procMessage : null;
+
 		if (msg == null) {
+			System.out.println("Received object is not a message");
 			return null;
 		}
-		if (prevMessages.containsKey(msg.getId())) {
+
+		if (msg.getId() != null && prevMessages.containsKey(msg.getId())) {
+			System.out.println("Message already processed" + msg.getMessage());
 			return null;
 		}
-		prevMessages.put(msg.getId());
+
 		gui_io.setReceivedMessage(msg.getMessage());
-		Message processedmsg = new Message(msg.getId(), Refiner.refineText(msg.getMessage()),
-				Refiner.refineColor(msg.getColor()));
-		gui_io.setSignal(processedmsg.getColor());
-		gui_io.setReceivedMessage(processedmsg.getMessage());
-		return processedmsg;
+		msg.setMessage(Refiner.refineText(msg.getMessage()));
+		msg.setColor(Refiner.refineColor(msg.getColor()));
+		gui_io.setSignal(msg.getColor());
+		gui_io.setRefinedMessage(msg.getMessage());
+		prevMessages.put(msg.getId());
+
+		return msg;
 	};
 
 	/**
@@ -98,9 +104,12 @@ public class MessageBroker extends Thread {
 			try {
 				Object object = network.retrieveMessage();
 				if (object == null) {
-					break;
+					continue;
 				}
 				Message msg = process(object);
+				if (msg == null) {
+					continue;
+				}
 				network.postMessage(msg);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -110,6 +119,7 @@ public class MessageBroker extends Thread {
 
 	public void send(Message message) {
 		network.postMessage(message);
+		prevMessages.put(message.getId());
 	}
 
 	/*
