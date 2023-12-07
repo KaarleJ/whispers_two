@@ -3,6 +3,7 @@ package fi.utu.tech.telephonegame;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.UUID;
+
 import fi.utu.tech.telephonegame.network.Network;
 import fi.utu.tech.telephonegame.network.NetworkService;
 import fi.utu.tech.telephonegame.network.Resolver;
@@ -45,8 +46,8 @@ public class MessageBroker extends Thread {
 		network = new NetworkService();
 	}
 
-	/**
-	 * Processes message 
+	/*
+	 * Processes message
 	 * 
 	 * In the the process method you need to:
 	 * 1. Test the type of the incoming object
@@ -62,10 +63,23 @@ public class MessageBroker extends Thread {
 	 * @return The message processed in the aforementioned ways
 	 * 
 	 */
+
 	private Message process(Object procMessage) {
-		// TODO
-		return null;
-	}
+		Message msg = procMessage instanceof Message ? (Message) procMessage : null;
+		if (msg == null) {
+			return null;
+		}
+		if (prevMessages.containsKey(msg.getId())) {
+			return null;
+		}
+		prevMessages.put(msg.getId());
+		gui_io.setReceivedMessage(msg.getMessage());
+		Message processedmsg = new Message(msg.getId(), Refiner.refineText(msg.getMessage()),
+				Refiner.refineColor(msg.getColor()));
+		gui_io.setSignal(processedmsg.getColor());
+		gui_io.setReceivedMessage(processedmsg.getMessage());
+		return processedmsg;
+	};
 
 	/**
 	 * This run method will be executed in a separate thread automatically by
@@ -80,43 +94,35 @@ public class MessageBroker extends Thread {
 	 * 
 	 */
 	public void run() {
-		// TODO
+		while (true) {
+			try {
+				Object object = network.retrieveMessage();
+				if (object == null) {
+					break;
+				}
+				Message msg = process(object);
+				network.postMessage(msg);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
-	/**
-	 * Sends message to the peer network using methods provided by network
-	 * interface
-	 * 
-	 * You need to make changes here
-	 * @param message The Message object to be sent
-	 */
 	public void send(Message message) {
-		// TODO
-		/*
-		 * Currently sending null to suppress errors
-		 * but obviously this has to change.
-		 * For some reason we cannot (yet) post Message objects...
-		 * Maybe take a look into the Message class and see if you
-		 * need to make it implement something to make postMessage
-		 * satisfied. Do not change the Network interface though.
-		 */
-		network.postMessage(null);
+		network.postMessage(message);
 	}
 
-	/**
+	/*
 	 * Wraps the String into a new Message object
 	 * and adds it to the sending queue to be processed by the network component
 	 * Called when sending a new message
+	 * 
 	 * @param text The text to be wrapped and sent
 	 */
 	public void send(String text) {
 		Message message = new Message(text, 0);
 		this.send(message);
 	}
-
-	/*
-	 * Do not edit anything below this point.
-	 */
 
 	/**
 	 * Determines which peer to connect to (or if none)
@@ -133,20 +139,23 @@ public class MessageBroker extends Thread {
 			System.out.println("Root node");
 			// Use the default port for the server and start listening for peers
 			network.startListening(rootServerPort);
-			// As a root node, we are responsible for answering resolving requests - start resolver server
+			// As a root node, we are responsible for answering resolving requests - start
+			// resolver server
 			resolver.startResolverServer();
 			// No need to connect to anybody since we are the first node, the "root node"
 		} else {
 			System.out.println("Leaf node");
 			try {
-				// Broadcast a resolve request and wait for a resolver server (root node) to send peer configuration
+				// Broadcast a resolve request and wait for a resolver server (root node) to
+				// send peer configuration
 				PeerConfiguration addresses = resolver.resolve();
 				// Start listening for new peers on the port sent by the resolver server
 				network.startListening(addresses.listeningPort);
 				// Connect to a peer using addresses sent by the resolver server
 				network.connect(addresses.peerAddr, addresses.peerPort);
 			} catch (UnknownHostException | NumberFormatException e) {
-				System.err.println("Peer discovery failed (maybe there are no root nodes or broadcast messages are not supported on current network)");
+				System.err.println(
+						"Peer discovery failed (maybe there are no root nodes or broadcast messages are not supported on current network)");
 				gui_io.enableConnect();
 			} catch (IOException e) {
 				System.err.println("Error connecting to the peer");
