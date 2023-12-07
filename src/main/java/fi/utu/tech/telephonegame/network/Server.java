@@ -11,12 +11,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * This class represents a server that listens for incoming connections.
  * When a new peer connects, a new PeerHandler instance is created for it.
  */
-public class Server extends Thread{
-  // Attributes
+public class Server extends Thread {
+  private ServerSocket serverSocket;
+  private int port;
+  private ConcurrentLinkedQueue<Serializable> messagesIn;
+  private CopyOnWriteArrayList<PeerHandler> peers;
 
-  //Constructor
-  public Server() {
-    // Pull
+  public Server(int port, ServerSocket serverSocket, ConcurrentLinkedQueue<Serializable> messagesIn,
+    CopyOnWriteArrayList<PeerHandler> peers) {
+    this.setName("Server Thread");
+    this.serverSocket = serverSocket;
+    this.port = port;
+    this.peers = peers;
+    this.messagesIn = messagesIn;
   }
 
   @Override
