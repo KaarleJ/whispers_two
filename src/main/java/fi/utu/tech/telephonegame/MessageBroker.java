@@ -68,12 +68,10 @@ public class MessageBroker extends Thread {
 		Message msg = procMessage instanceof Message ? (Message) procMessage : null;
 
 		if (msg == null) {
-			System.out.println("Received object is not a message");
 			return null;
 		}
 
 		if (msg.getId() != null && prevMessages.containsKey(msg.getId())) {
-			System.out.println("Message already processed" + msg.getMessage());
 			return null;
 		}
 
@@ -103,14 +101,10 @@ public class MessageBroker extends Thread {
 		while (true) {
 			try {
 				Object object = network.retrieveMessage();
-				if (object == null) {
-					continue;
-				}
 				Message msg = process(object);
-				if (msg == null) {
-					continue;
+				if (msg != null) {
+					network.postMessage(msg);
 				}
-				network.postMessage(msg);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

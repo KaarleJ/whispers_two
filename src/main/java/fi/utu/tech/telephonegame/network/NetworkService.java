@@ -5,8 +5,8 @@ import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A concrete implementation of Network interface.
@@ -24,8 +24,8 @@ public class NetworkService extends Thread implements Network {
 	private Server server;
 
 	// These are the queues for storing messages to be sent and received
-	private ConcurrentLinkedQueue<Serializable> messagesIn = new ConcurrentLinkedQueue<Serializable>();
-	private ConcurrentLinkedQueue<Serializable> messagesOut = new ConcurrentLinkedQueue<Serializable>();
+	private LinkedBlockingQueue<Serializable> messagesIn = new LinkedBlockingQueue<Serializable>();
+	private LinkedBlockingQueue<Serializable> messagesOut = new LinkedBlockingQueue<Serializable>();
 
 	// This is a list to keep track of all the peers connected to this node
 	private CopyOnWriteArrayList<PeerHandler> peers = new CopyOnWriteArrayList<PeerHandler>();
@@ -106,7 +106,11 @@ public class NetworkService extends Thread implements Network {
 	 * @param out The Serializable object to be sent
 	 */
 	public void postMessage(Serializable out) {
-		messagesOut.add(out);
+		try {
+			messagesOut.put(out);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -119,12 +123,7 @@ public class NetworkService extends Thread implements Network {
 	 * @return The next message
 	 */
 	public Object retrieveMessage() throws InterruptedException {
-		Object msg = messagesIn.poll();
-		if (msg != null) {
-			return msg;
-		} else {
-			return null;
-		}
+		return messagesIn.take();
 	}
 
 	/**
@@ -141,7 +140,11 @@ public class NetworkService extends Thread implements Network {
 	 */
 	public void run() {
 		while (true) {
-			sendToNeighbours(messagesOut.poll());
+			try {
+				sendToNeighbours(messagesOut.take());
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 	}

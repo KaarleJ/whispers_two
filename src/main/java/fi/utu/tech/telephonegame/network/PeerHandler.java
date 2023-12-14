@@ -5,7 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /*
  * This class represents the connection between two peers.
@@ -22,15 +22,15 @@ public class PeerHandler extends Thread {
   Socket s;
   final ObjectInputStream in;
   final ObjectOutputStream out;
-  ConcurrentLinkedQueue<Serializable> msgIn;
-  ConcurrentLinkedQueue<Serializable> msgOut;
+  LinkedBlockingQueue<Serializable> msgIn;
+  LinkedBlockingQueue<Serializable> msgOut;
 
-  public PeerHandler(Socket s, ConcurrentLinkedQueue<Serializable> msgIn) throws IOException {
+  public PeerHandler(Socket s, LinkedBlockingQueue<Serializable> msgIn) throws IOException {
     this.s = s;
     this.out = new ObjectOutputStream(s.getOutputStream());
     this.in = new ObjectInputStream(s.getInputStream());
     this.msgIn = msgIn;
-    this.msgOut = new ConcurrentLinkedQueue<Serializable>();
+    this.msgOut = new LinkedBlockingQueue<Serializable>();
     this.setName("PeerHandler Thread");
   }
 
@@ -56,7 +56,11 @@ public class PeerHandler extends Thread {
         while (true) {
           Object o = in.readObject();
           if (o != null) {
-            msgIn.add((Serializable) o);
+            try {
+              msgIn.put((Serializable) o);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
           }
         }
       } catch (IOException | ClassNotFoundException e) {
@@ -64,12 +68,14 @@ public class PeerHandler extends Thread {
       }
     }).start();
 
-    // Here we poll for messages to be sent to the peer and send them.
+    // Here we take the next message to be sent and send it to the peer
     try (out) {
       while (true) {
-        Serializable msg = msgOut.poll();
-        if (msg != null) {
+        try {
+          Serializable msg = msgOut.take();
           out.writeObject(msg);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
         }
       }
     } catch (IOException e) {

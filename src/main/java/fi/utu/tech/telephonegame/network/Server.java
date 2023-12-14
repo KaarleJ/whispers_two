@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /*
  * This class represents a server that listens for incoming connections.
@@ -14,10 +14,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class Server extends Thread {
   private ServerSocket serverSocket;
   private int port;
-  private ConcurrentLinkedQueue<Serializable> messagesIn;
+  private LinkedBlockingQueue<Serializable> messagesIn;
   private CopyOnWriteArrayList<PeerHandler> peers;
 
-  public Server(int port, ServerSocket serverSocket, ConcurrentLinkedQueue<Serializable> messagesIn,
+  public Server(int port, ServerSocket serverSocket, LinkedBlockingQueue<Serializable> messagesIn,
       CopyOnWriteArrayList<PeerHandler> peers) {
     this.setName("Server Thread");
     this.serverSocket = serverSocket;
